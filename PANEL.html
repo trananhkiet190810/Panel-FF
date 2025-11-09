@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Mở Game Bảo Mật</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Thiết lập font Inter mặc định */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        /* Ẩn input file mặc định và tạo nút chọn file tùy chỉnh */
+        .custom-file-upload {
+            border: 2px dashed #3b82f6;
+            background-color: #0dd8a5;
+            color: #1e40af;
+            cursor: pointer;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .custom-file-upload:hover {
+            background-color: #dbeafe;
+            border-color: #2563eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app-container" class="w-full max-w-md bg-white shadow-2xl rounded-xl p-8 transition-all duration-300">
+
+        <!-- Các trạng thái của ứng dụng sẽ được hiển thị tại đây -->
+        <div id="login-screen"></div>
+        <div id="menu-screen" class="hidden"></div>
+        <div id="file-selection-screen" class="hidden"></div>
+        <div id="game-launch-screen" class="hidden"></div>
+
+        <!-- Vùng hiển thị thông báo lỗi/thành công -->
+        <div id="message-box" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+    </div>
+
+    <script>
+        // Mật khẩu cố định để đăng nhập
+        const CORRECT_PASSWORD = "kiettran";
+        let currentState = 'login';
+        
+        // Dữ liệu mock cho menu
+        const menuOptions = [
+            { id: 1, name: "Fix rung" },
+            { id: 2, name: "AimNeck" },
+            { id: 3, name: "BUFF HZ"},
+        ];
+
+        // --- Hàm Hiển thị Thông báo ---
+        function showMessage(text, type = 'success') {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.className = 'mt-4 p-3 rounded-lg text-center transition-all duration-300';
+            
+            if (type === 'success') {
+                box.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'error') {
+                box.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                box.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            box.classList.remove('hidden');
+            
+            // Ẩn thông báo sau 5 giây
+            setTimeout(() => {
+                box.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- Hàm Chuyển trạng thái giao diện ---
+        function transitionTo(newState) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('file-selection-screen').classList.add('hidden');
+            document.getElementById('game-launch-screen').classList.add('hidden');
+
+            // Hiển thị màn hình mới
+            document.getElementById(`${newState}-screen`).classList.remove('hidden');
+            currentState = newState;
+        }
+
+        // --- Màn hình 1: Đăng nhập ---
+        function renderLoginScreen() {
+            const screen = document.getElementById('login-screen');
+            screen.innerHTML = `
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">Panel By Kiettran</h1>
+                <p class="text-gray-500 mb-6 text-center text-sm">Vui lòng nhập mật khẩu để truy cập.</p>
+                <div class="space-y-4">
+                    <input type="password" id="password-input" placeholder="Nhập pass đi cậu" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <button id="login-button" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition duration-200 transform hover:scale-[1.01] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                        Đăng Nhập
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('login-button').addEventListener('click', handleLogin);
+            document.getElementById('password-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        }
+
+        function handleLogin() {
+            const password = document.getElementById('password-input').value;
+            if (password === CORRECT_PASSWORD) {
+                showMessage("Đăng nhập thành công! Chào mừng trở lại.", 'success');
+                renderMenuScreen();
+                transitionTo('menu');
+            } else {
+                showMessage("Mật khẩu không đúng. Vui lòng thử lại.", 'error');
+            }
+        }
+
+        // --- Màn hình 2: Menu ---
+        function renderMenuScreen() {
+            const screen = document.getElementById('menu-screen');
+            screen.innerHTML = `
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">Chức năng
+                <p class="text-gray-600 mb-6 text-center">Hãy chọn một trong các tác vụ dưới đây:</p>
+                <div class="space-y-3">
+                    ${menuOptions.map(option => `
+                        <button data-action="${option.action || 'info'}" data-name="${option.name}"
+                                class="w-full text-left p-4 bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-800 rounded-lg shadow-sm transition duration-150 ease-in-out transform hover:-translate-y-0.5 menu-option-button">
+                            <span class="font-semibold">${option.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+                <button id="logout-button" 
+                        class="mt-6 w-full text-center text-sm text-gray-500 hover:text-red-600 transition duration-150">
+                    Đăng Xuất
+                </button>
+            `;
+
+            document.querySelectorAll('.menu-option-button').forEach(button => {
+                button.addEventListener('click', handleMenuSelection);
+            });
+            document.getElementById('logout-button').addEventListener('click', handleLogout);
+        }
+
+        function handleMenuSelection(event) {
+            const button = event.currentTarget;
+            const action = button.getAttribute('data-action');
+            const name = button.getAttribute('data-name');
+
+            if (action === 'select_file') {
+                showMessage("Đang chuyển đến màn hình chọn file Game...", 'info');
+                renderFileSelectionScreen();
+                transitionTo('file-selection');
+            } else {
+                showMessage(`Đã thực hiện: ${name}`, 'info');
+            }
+        }
+
+        function handleLogout() {
+            showMessage("Đã đăng xuất thành công. Hẹn gặp lại!", 'info');
+            renderLoginScreen();
+            transitionTo('login');
+        }
+
+        // --- Màn hình 3: Chọn File (Thực) ---
+        function renderFileSelectionScreen() {
+            const screen = document.getElementById('file-selection-screen');
+            screen.innerHTML = `
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">📂 Chọn File Game Từ Máy Tính</h1>
+                <p class="text-gray-600 mb-6 text-center">Nhấp vào ô bên dưới để mở hộp thoại chọn file.</p>
+                
+                <label for="game-file-input" class="custom-file-upload">
+                    <span class="block text-4xl mb-2">⬆️</span>
+                    <span class="block font-bold">Bấm vào đây để chọn file (.exe, .dat, .iso, v.v.)</span>
+                    <p id="file-name-display" class="mt-2 text-sm text-gray-700 font-semibold"></p>
+                </label>
+                
+                <!-- Input file thực tế, bị ẩn đi và dùng label tùy chỉnh -->
+                <input type="file" id="game-file-input" class="hidden" accept=".exe, .dat, .iso, .bin">
+
+                <button id="launch-game-button" disabled
+                        class="mt-6 w-full bg-green-400 text-white font-semibold py-3 rounded-lg shadow-md opacity-50 cursor-not-allowed transition duration-200">
+                    ▶️ Khởi Chạy Game Đã Chọn
+                </button>
+                
+                <button id="back-to-menu-button" 
+                        class="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    ← Quay lại Menu
+                </button>
+            `;
+
+            const fileInput = document.getElementById('game-file-input');
+            const launchButton = document.getElementById('launch-game-button');
+            const fileNameDisplay = document.getElementById('file-name-display');
+
+            // Lắng nghe sự kiện khi người dùng chọn file
+            fileInput.addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    const file = event.target.files[0];
+                    fileNameDisplay.textContent = `Đã chọn: ${file.name}`;
+                    
+                    // Kích hoạt nút khởi chạy và gán dữ liệu file
+                    launchButton.disabled = false;
+                    launchButton.classList.remove('bg-green-400', 'opacity-50', 'cursor-not-allowed');
+                    launchButton.classList.add('bg-green-600', 'hover:bg-green-700', 'transform', 'hover:scale-[1.01]', 'active:scale-[0.98]');
+                    launchButton.setAttribute('data-filename', file.name);
+                    
+                    // Tự động khởi chạy game ngay sau khi chọn file (theo yêu cầu mới)
+                    handleFileSelection(file.name);
+                } else {
+                    fileNameDisplay.textContent = 'Chưa có file nào được chọn.';
+                    launchButton.disabled = true;
+                    launchButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'transform', 'hover:scale-[1.01]', 'active:scale-[0.98]');
+                    launchButton.classList.add('bg-green-400', 'opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            // Nút Khởi chạy (Chỉ cần mô phỏng việc tự động vào, nhưng vẫn để nút cho tương lai)
+            launchButton.addEventListener('click', (event) => {
+                 const fileName = event.currentTarget.getAttribute('data-filename');
+                 if(fileName) {
+                    handleFileSelection(fileName);
+                 }
+            });
+            
+            document.getElementById('back-to-menu-button').addEventListener('click', () => {
+                transitionTo('menu');
+            });
+        }
+
+        // Xử lý khi chọn file game (Tự động chuyển sang màn hình khởi chạy)
+        function handleFileSelection(fileName) {
+            // Bước 1: Thông báo cho người dùng
+            showMessage(`Đã chọn file: ${fileName}. Đang khởi chạy game... Chuẩn bị vào!`, 'info');
+            
+            // Bước 2: Chuyển sang màn hình khởi chạy game
+            renderGameLaunchScreen(fileName);
+            transitionTo('game-launch');
+        }
+
+        // --- Khởi tạo Ứng dụng ---
+        window.onload = function() {
+            renderLoginScreen();
+            transitionTo('login');
+        }
+    </script>
+</body>
+</html>
